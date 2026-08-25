@@ -2,7 +2,7 @@ import cv2
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
-# Load standard face classifier
+# Load Haar Cascade classifiers
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
 
@@ -17,11 +17,10 @@ class EmotionDetector(VideoTransformerBase):
             roi_gray = gray[y:y+h, x:x+w]
             smiles = smile_cascade.detectMultiScale(roi_gray, scaleFactor=1.8, minNeighbors=20)
             
-            # Simple rule-based emotion detection for stability
             if len(smiles) > 0:
                 emotion = "Happy"
             else:
-                emotion = "Neutral / Focused"
+                emotion = "Neutral"
 
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(img, emotion, (x, y - 10),
@@ -30,6 +29,6 @@ class EmotionDetector(VideoTransformerBase):
         return img
 
 st.title("Facial Expression Detector")
-st.write("Click **START** to turn on webcam.")
+st.write("Click **START** to enable webcam.")
 
 webrtc_streamer(key="face-emotion", video_transformer_factory=EmotionDetector)
