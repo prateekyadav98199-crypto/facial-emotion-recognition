@@ -1,32 +1,35 @@
 import cv2
 import streamlit as st
-from fer import FER
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
-# Initialize detector outside loop for high performance
-detector = FER(mtcnn=False)
+# Load standard face classifier
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
 
 class EmotionDetector(VideoTransformerBase):
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Detect emotions on frame
-        results = detector.detect_emotions(img)
-        
-        for result in results:
-            (x, y, w, h) = result["box"]
-            emotions = result["emotions"]
-            # Get the emotion with highest probability score
-            dominant_emotion = max(emotions, key=emotions.get)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+
+        for (x, y, w, h) in faces:
+            roi_gray = gray[y:y+h, x:x+w]
+            smiles = smile_cascade.detectMultiScale(roi_gray, scaleFactor=1.8, minNeighbors=20)
             
-            # Draw bounding box and label
+            # Simple rule-based emotion detection for stability
+            if len(smiles) > 0:
+                emotion = "Happy"
+            else:
+                emotion = "Neutral / Focused"
+
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(img, dominant_emotion.capitalize(), (x, y - 10),
+            cv2.putText(img, emotion, (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             
         return img
 
-st.title("Facial Emotion Recognition App")
-st.write("Click **START** below to enable your webcam and analyze emotions in real time.")
+st.title("Facial Expression Detector")
+st.write("Click **START** to turn on webcam.")
 
-webrtc_streamer(key="emotion-detection", video_transformer_factory=EmotionDetector)
+webrtc_streamer(key="face-emotion", video_transformer_factory=EmotionDetector)
