@@ -1,13 +1,13 @@
-# Real-Time Facial Emotion Recognition
+# Real-Time Facial Emotion Recognition (Streamlit)
 
-A lightweight real-time facial emotion recognition project built using OpenCV and DeepFace.
+An interactive web app for real-time facial emotion recognition built using Streamlit, OpenCV, and DeepFace.
 
 ## Features
-- Real-time webcam video feed processing
-- Automatic face detection using Haar Cascade
-- Emotion classification (Happy, Sad, Angry, Surprised, Neutral, Fear, Disgust)
+- Interactive Web UI powered by Streamlit
+- Real-time browser-based webcam stream via `streamlit-webrtc`
+- Emotion detection for Happy, Sad, Angry, Surprised, Neutral, Fear, and Disgust
 
-## Installation & Setup
+## Installation & Running Locally
 
 1. **Clone the repository:**
    ```bash
