@@ -1,37 +1,31 @@
 import cv2
 import streamlit as st
-from deepface import DeepFace
+from fer import FER
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
-# Load OpenCV's built-in face detector
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+# Initialize detector outside loop for high performance
+detector = FER(mtcnn=False)
 
 class EmotionDetector(VideoTransformerBase):
     def transform(self, frame):
-        # Convert video frame to numpy array
         img = frame.to_ndarray(format="bgr24")
         
-        # Convert to grayscale for faster detection
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-        for (x, y, w, h) in faces:
-            face_roi = img[y:y+h, x:x+w]
-            try:
-                # Predict emotion
-                analysis = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
-                dominant_emotion = analysis[0]['dominant_emotion']
-
-                # Draw bounding box and label
-                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.putText(img, dominant_emotion.capitalize(), (x, y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            except Exception:
-                pass
-
+        # Detect emotions on frame
+        results = detector.detect_emotions(img)
+        
+        for result in results:
+            (x, y, w, h) = result["box"]
+            emotions = result["emotions"]
+            # Get the emotion with highest probability score
+            dominant_emotion = max(emotions, key=emotions.get)
+            
+            # Draw bounding box and label
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(img, dominant_emotion.capitalize(), (x, y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            
         return img
 
-# Streamlit UI
 st.title("Facial Emotion Recognition App")
 st.write("Click **START** below to enable your webcam and analyze emotions in real time.")
 
